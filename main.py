@@ -35,6 +35,7 @@ import os
 import threading
 import socket
 import sys
+import subprocess
 
 # 为了debug我封装了一些函数...
 
@@ -64,20 +65,23 @@ if not path_exists('~/masque-linux'):
     ''')
     time.sleep(4)
 
-# # 启动masquerade server
-# # 结尾带&的命令会在后台运行
-# exec('''
-# cd ~/masque-linux
-# export RUST_LOG=info
-# ./server localhost:4433 &
-# ''')
-
-# # 启动masquerade client
-# exec('''
-# cd ~/masque-linux
-# export RUST_LOG=info
-# ./client localhost:4433 localhost:8989 http &
-# ''')
+def kill_process_on_port(port, wait=0.1):
+    try:
+        # 使用 lsof 命令查找监听指定端口的进程并获取其PID
+        cmd = f"lsof -i :{port} -t"
+        output = subprocess.check_output(cmd, shell=True)
+        pids = output.decode('utf-8').split('\n')
+        
+        for pid in pids:
+            if pid:
+                pid = int(pid)
+                # 终止进程
+                subprocess.call(['kill', '-9', str(pid)])
+                print(f"Terminated process with PID {pid}")
+    except subprocess.CalledProcessError:
+        print(f"No process found listening on port {port}")
+    finally:
+        time.sleep(wait)
 
 # 启动UDP echo server
 # @start
@@ -96,9 +100,9 @@ def tcp_echo_server(server_ip):
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
 # @start
-def tcp_client(client_ip):
+def tcp_client(server_ip, proxy_ip):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((client_ip, 8989))
+    sock.connect((proxy_ip, 8989))
     def send(data):
         sock.send(data.encode() + b'\r\n')
         print('TCP client sent: ', data)
@@ -106,8 +110,8 @@ def tcp_client(client_ip):
     CONNECT /something/127.0.0.1/12345/ HTTP/1.1
     Host: example.com
     '''
-    send(f'CONNECT {client_ip}:12345/something/127.0.0.1/12345/ HTTP/1.1')
-    send(f'Host: {client_ip}:12345')
+    send(f'CONNECT {server_ip}:12345/something/127.0.0.1/12345/ HTTP/1.1')
+    send(f'Host: {server_ip}:12345')
     send('')
     send('hello')
     # 看看有没有得到echo
@@ -122,6 +126,8 @@ role = sys.argv[1]
 # print(role, ip_addr)
 
 if (role == 'server'):
+    kill_process_on_port(4433)
+
     server_ip = sys.argv[2]
 
     tcp_echo_server(server_ip)
@@ -131,22 +137,25 @@ if (role == 'server'):
     exec(f'''
     cd ~/masque-linux
     export RUST_LOG=info
-    ./server {ip_addr}:4433 &
+    ./server {server_ip}:4433 &
     ''')
 elif (role == 'proxy'):
+    kill_process_on_port(8989)
+
     server_ip = sys.argv[2]
     proxy_ip = sys.argv[3]
 
     # 启动masquerade client
-    exec('''
+    exec(f'''
     cd ~/masque-linux
     export RUST_LOG=info
     ./client {server_ip}:4433 {proxy_ip}:8989 http &
     ''')
 elif (role == 'client'):
-    client_ip = sys.argv[2]
+    server_ip = sys.argv[2]
+    proxy_ip = sys.argv[3]
 
-    tcp_client(client_ip)
+    tcp_client(server_ip, proxy_ip)
 else:
     raise ValueError('Unrecognized role')
 
