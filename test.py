@@ -31,9 +31,11 @@ nc pingpong会回应它收到的所有内容, 这些内容会沿着原路返回T
 '''
 
 
+
 import time
 import os
 import threading
+import subprocess
 import socket
 
 # 为了debug我封装了一些函数...
@@ -46,15 +48,37 @@ def path_exists(path):
     return os.path.exists(path)
 
 def exec(command):
-    print('\n\n\nexecuting:', command)
+    print('executing:', command)
     os.system(command)
     time.sleep(1/10)
 
 def start(func):
-    print('\n\n\nstarting:', func.__name__)
+    print('starting:', func.__name__)
     thread = threading.Thread(target=func)
     thread.start()
     time.sleep(1/10)
+
+
+def kill_process_on_port(port, wait=0.1):
+    try:
+        # 使用 lsof 命令查找监听指定端口的进程并获取其PID
+        cmd = f"lsof -i :{port} -t"
+        output = subprocess.check_output(cmd, shell=True)
+        pids = output.decode('utf-8').split('\n')
+        
+        for pid in pids:
+            if pid:
+                pid = int(pid)
+                # 终止进程
+                subprocess.call(['kill', '-9', str(pid)])
+                print(f"Terminated process with PID {pid}")
+    except subprocess.CalledProcessError:
+        print(f"No process found listening on port {port}")
+    finally:
+        time.sleep(wait)
+
+
+
 
 
 # 下载编译好的masquerade，保存在~/masque-linux
@@ -67,20 +91,25 @@ if not path_exists('~/masque-linux'):
 
 # 启动masquerade server
 # 结尾带&的命令会在后台运行
+print('\n\n')
+kill_process_on_port(4433)
 exec('''
 cd ~/masque-linux
-export RUST_LOG=info
+export RUST_LOG=error
 ./server localhost:4433 &
 ''')
 
 # 启动masquerade client
+print('\n\n')
+kill_process_on_port(8989)
 exec('''
 cd ~/masque-linux
-export RUST_LOG=info
+export RUST_LOG=error
 ./client localhost:4433 localhost:8989 http &
 ''')
 
 # 启动UDP echo server
+print('\n\n')
 @start
 def tcp_echo_server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -88,14 +117,18 @@ def tcp_echo_server():
     sock.listen(5)
     # loop
     conn, addr = sock.accept()
+    print('TCP echo server accepted connection from', addr)
     while True:
-        print('TCP echo server accepted connection from', addr)
         data = conn.recv(1024)
-        print('TCP echo server received:', data)
+        if not data:
+            print('TCP echo server connection closed')
+            break
+        print('TCP echo server received and sent:', data)
         conn.send(data)
-        time.sleep(1)
+    conn.close()
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
+print('\n\n')
 @start
 def tcp_client():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -109,15 +142,23 @@ def tcp_client():
     '''
     send('CONNECT localhost:12345/something/127.0.0.1/12345/ HTTP/1.1')
     send('Host: localhost:12345')
-    send('')
+    
+    send('\r\n\r\n')
+    time.sleep(0.1)
     send('hello')
     # 看看有没有得到echo
-    data = sock.recv(1024)
-    print('TCP client received: ', data)
+    while True:
+        data = sock.recv(1024)
+        if not data:
+            print('TCP client connection closed')
+            break
+        print('TCP client received: ', data)
+    sock.close()
 
 
 
-time.sleep(999)
+
+time.sleep(999999999)
 
 
 
