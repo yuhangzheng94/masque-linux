@@ -34,6 +34,7 @@ import time
 import os
 import threading
 import socket
+import sys
 
 # 为了debug我封装了一些函数...
 
@@ -55,7 +56,6 @@ def start(func):
     thread.start()
     time.sleep(1/10)
 
-
 # 下载编译好的masquerade，保存在~/masque-linux
 if not path_exists('~/masque-linux'):
     exec('''
@@ -64,26 +64,26 @@ if not path_exists('~/masque-linux'):
     ''')
     time.sleep(4)
 
-# 启动masquerade server
-# 结尾带&的命令会在后台运行
-exec('''
-cd ~/masque-linux
-export RUST_LOG=info
-./server localhost:4433 &
-''')
+# # 启动masquerade server
+# # 结尾带&的命令会在后台运行
+# exec('''
+# cd ~/masque-linux
+# export RUST_LOG=info
+# ./server localhost:4433 &
+# ''')
 
-# 启动masquerade client
-exec('''
-cd ~/masque-linux
-export RUST_LOG=info
-./client localhost:4433 localhost:8989 http &
-''')
+# # 启动masquerade client
+# exec('''
+# cd ~/masque-linux
+# export RUST_LOG=info
+# ./client localhost:4433 localhost:8989 http &
+# ''')
 
 # 启动UDP echo server
-@start
-def tcp_echo_server():
+# @start
+def tcp_echo_server(server_ip):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('localhost', 12345))
+    sock.bind((server_ip, 12345))
     sock.listen(5)
     # loop
     conn, addr = sock.accept()
@@ -95,10 +95,10 @@ def tcp_echo_server():
         time.sleep(1)
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
-@start
-def tcp_client():
+# @start
+def tcp_client(client_ip):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('localhost', 8989))
+    sock.connect((client_ip, 8989))
     def send(data):
         sock.send(data.encode() + b'\r\n')
         print('TCP client sent: ', data)
@@ -106,18 +106,51 @@ def tcp_client():
     CONNECT /something/127.0.0.1/12345/ HTTP/1.1
     Host: example.com
     '''
-    send('CONNECT localhost:12345/something/127.0.0.1/12345/ HTTP/1.1')
-    send('Host: localhost:12345')
+    send(f'CONNECT {client_ip}:12345/something/127.0.0.1/12345/ HTTP/1.1')
+    send(f'Host: {client_ip}:12345')
     send('')
     send('hello')
     # 看看有没有得到echo
     data = sock.recv(1024)
     print('TCP client received: ', data)
 
-
-
 time.sleep(999)
 
+# run: python3 main.py [ROLE] [IP_ADDR]
+# e.g. python main.py server 128.110.216.119
+
+role = sys.argv[1]
+
+# print(role, ip_addr)
+
+if (role == 'server'):
+    server_ip = sys.argv[2]
+
+    tcp_echo_server(server_ip)
+
+    # 启动masquerade server
+    # 结尾带&的命令会在后台运行
+    exec(f'''
+    cd ~/masque-linux
+    export RUST_LOG=info
+    ./server {ip_addr}:4433 &
+    ''')
+elif (role == 'proxy'):
+    server_ip = sys.argv[2]
+    proxy_ip = sys.argv[3]
+
+    # 启动masquerade client
+    exec('''
+    cd ~/masque-linux
+    export RUST_LOG=info
+    ./client {server_ip}:4433 {proxy_ip}:8989 http &
+    ''')
+elif (role == 'client'):
+    client_ip = sys.argv[2]
+
+    tcp_client(client_ip)
+else:
+    raise ValueError('Unrecognized role')
 
 
 
