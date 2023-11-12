@@ -114,8 +114,6 @@ def tcp_client(client_ip):
     data = sock.recv(1024)
     print('TCP client received: ', data)
 
-time.sleep(999)
-
 # run: python3 main.py [ROLE] [IP_ADDR]
 # e.g. python main.py server 128.110.216.119
 
@@ -151,6 +149,8 @@ elif (role == 'client'):
     tcp_client(client_ip)
 else:
     raise ValueError('Unrecognized role')
+
+time.sleep(999)
 
 
 
