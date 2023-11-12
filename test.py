@@ -35,6 +35,7 @@ nc pingpong会回应它收到的所有内容, 这些内容会沿着原路返回T
 import time
 import os
 import threading
+import subprocess
 import socket
 
 # 为了debug我封装了一些函数...
@@ -47,17 +48,16 @@ def path_exists(path):
     return os.path.exists(path)
 
 def exec(command):
-    print('\n\n\nexecuting:', command)
+    print('executing:', command)
     os.system(command)
     time.sleep(1/10)
 
 def start(func):
-    print('\n\n\nstarting:', func.__name__)
+    print('starting:', func.__name__)
     thread = threading.Thread(target=func)
     thread.start()
     time.sleep(1/10)
 
-import subprocess
 
 def kill_process_on_port(port, wait=0.1):
     try:
@@ -91,22 +91,25 @@ if not path_exists('~/masque-linux'):
 
 # 启动masquerade server
 # 结尾带&的命令会在后台运行
+print('\n\n')
 kill_process_on_port(4433)
 exec('''
 cd ~/masque-linux
-export RUST_LOG=info
+export RUST_LOG=error
 ./server localhost:4433 &
 ''')
 
 # 启动masquerade client
+print('\n\n')
 kill_process_on_port(8989)
 exec('''
 cd ~/masque-linux
-export RUST_LOG=info
+export RUST_LOG=error
 ./client localhost:4433 localhost:8989 http &
 ''')
 
 # 启动UDP echo server
+print('\n\n')
 @start
 def tcp_echo_server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -120,11 +123,12 @@ def tcp_echo_server():
         if not data:
             print('TCP echo server connection closed')
             break
-        print('TCP echo server received:', data)
+        print('TCP echo server received and sent:', data)
         conn.send(data)
-        time.sleep(1)
+    conn.close()
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
+print('\n\n')
 @start
 def tcp_client():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -138,11 +142,19 @@ def tcp_client():
     '''
     send('CONNECT localhost:12345/something/127.0.0.1/12345/ HTTP/1.1')
     send('Host: localhost:12345')
-    send('')
+    
+    send('\r\n\r\n')
+    time.sleep(0.1)
     send('hello')
     # 看看有没有得到echo
-    data = sock.recv(1024)
-    print('TCP client received: ', data)
+    while True:
+        data = sock.recv(1024)
+        if not data:
+            print('TCP client connection closed')
+            break
+        print('TCP client received: ', data)
+    sock.close()
+
 
 
 
