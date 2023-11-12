@@ -31,6 +31,7 @@ nc pingpong会回应它收到的所有内容, 这些内容会沿着原路返回T
 '''
 
 
+
 import time
 import os
 import threading
@@ -56,6 +57,29 @@ def start(func):
     thread.start()
     time.sleep(1/10)
 
+import subprocess
+
+def kill_process_on_port(port, wait=0.1):
+    try:
+        # 使用 lsof 命令查找监听指定端口的进程并获取其PID
+        cmd = f"lsof -i :{port} -t"
+        output = subprocess.check_output(cmd, shell=True)
+        pids = output.decode('utf-8').split('\n')
+        
+        for pid in pids:
+            if pid:
+                pid = int(pid)
+                # 终止进程
+                subprocess.call(['kill', '-9', str(pid)])
+                print(f"Terminated process with PID {pid}")
+    except subprocess.CalledProcessError:
+        print(f"No process found listening on port {port}")
+    finally:
+        time.sleep(wait)
+
+
+
+
 
 # 下载编译好的masquerade，保存在~/masque-linux
 if not path_exists('~/masque-linux'):
@@ -67,6 +91,7 @@ if not path_exists('~/masque-linux'):
 
 # 启动masquerade server
 # 结尾带&的命令会在后台运行
+kill_process_on_port(4433)
 exec('''
 cd ~/masque-linux
 export RUST_LOG=info
@@ -74,6 +99,7 @@ export RUST_LOG=info
 ''')
 
 # 启动masquerade client
+kill_process_on_port(8989)
 exec('''
 cd ~/masque-linux
 export RUST_LOG=info
@@ -88,9 +114,12 @@ def tcp_echo_server():
     sock.listen(5)
     # loop
     conn, addr = sock.accept()
+    print('TCP echo server accepted connection from', addr)
     while True:
-        print('TCP echo server accepted connection from', addr)
         data = conn.recv(1024)
+        if not data:
+            print('TCP echo server connection closed')
+            break
         print('TCP echo server received:', data)
         conn.send(data)
         time.sleep(1)
@@ -117,7 +146,7 @@ def tcp_client():
 
 
 
-time.sleep(999)
+time.sleep(999999999)
 
 
 
