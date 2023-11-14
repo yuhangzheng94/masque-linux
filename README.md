@@ -14,6 +14,7 @@ python test.py
 ```
 
 To run it on separate nodes:
+
 1. server
 ```bash
 python main.py server "$(hostname -i)"
@@ -26,3 +27,6 @@ python main.py proxy [SERVER_IP_ADDR] "$(hostname -i)"
 ```bash
 python main.py client [SERVER_IP_ADDR] [PROXY_IP_ADDR]
 ```
+
+Application structure of the current deployment:
+![](/assets/masquerade_str.drawio.png)
