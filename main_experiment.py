@@ -9,7 +9,7 @@ import utils
 ECHO_SERVER_PORT = 12345
 MASQUE_SERVER_PORT = 4433
 MASQUE_CLIENT_PORT = 8989
-LOG_LEVEL = 'info'
+LOG_LEVEL = 'debug'
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 all_threads = []
@@ -27,13 +27,13 @@ def handle_client(conn, addr):
                 print('TCP echo server received:', data)
                 conn.send(data)
                 startTime = time.time()
-            if (time.time() - startTime >= 15):
-                break
+            # if (time.time() - startTime >= 15):
+            #     break
         except:
             print('An error occurred at server.')
             break
 
-        time.sleep(1)
+        # time.sleep(1)
     
     conn.close()
     print('thread ending...')
@@ -43,6 +43,8 @@ def handle_client(conn, addr):
 # 启动UDP echo server
 # @start
 def run_echo_server():
+    utils.kill_process_on_port(ECHO_SERVER_PORT)
+
     # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', ECHO_SERVER_PORT))
     sock.listen(5)
@@ -57,9 +59,9 @@ def run_echo_server():
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
 # @start
-def test_echo_client(server_ip):
+def test_echo_client(server_ip, client_ip):
     # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('', MASQUE_CLIENT_PORT))
+    sock.connect((client_ip, MASQUE_CLIENT_PORT))
     def send(data):
         sock.send(data.encode() + b'\r\n')
         print('TCP client sent: ', data)
@@ -69,11 +71,14 @@ def test_echo_client(server_ip):
     '''
     send(f'CONNECT {server_ip}:12345/ HTTP/1.1')
     send(f'Host: {server_ip}:12345')
-    send('')
-    send('hello')
+    time.sleep(0.1)
     # 看看有没有得到echo
-    data = sock.recv(1024)
-    print('TCP client received: ', data)
+    for i in range(100):
+        send(f'Hello world! #{i}')
+        # 看看有没有得到echo
+        data = sock.recv(1024)
+        print('TCP client received: ', data)
+    sock.close()
 
 def main():
     role = sys.argv[1]
@@ -94,6 +99,9 @@ def main():
         ./server {proxy_ip}:{MASQUE_SERVER_PORT} &
         ''')
 
+        while True:
+            time.sleep(1)
+
     elif (role == 'client'):
         utils.kill_process_on_port(MASQUE_CLIENT_PORT)
 
@@ -108,12 +116,10 @@ def main():
         ./client {proxy_ip}:{MASQUE_SERVER_PORT} {client_ip}:{MASQUE_CLIENT_PORT} http &
         ''')
 
-        test_echo_client(server_ip)
+        test_echo_client(server_ip, client_ip)
+
     else:
         raise ValueError('Unrecognized role')
-
-    # time.sleep(999)
-
 
 
 if __name__ == '__main__':
