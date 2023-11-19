@@ -17,16 +17,23 @@ To run it on separate nodes:
 
 1. server
 ```bash
-python main.py server "$(hostname -i)"
+python main_experiment.py server
 ```
 2. proxy
 ```bash
-python main.py proxy [SERVER_IP_ADDR] "$(hostname -i)"
+chmod +x src/proxy.sh
+./src/proxy.sh
 ```
 3. client
 ```bash
-python main.py client [SERVER_IP_ADDR] [PROXY_IP_ADDR]
+python main_experiment.py client [SERVER_IP_ADDR] [PROXY_IP_ADDR] "$(hostname -i)"
 ```
 
 Application structure of the current deployment:
-![](/assets/masquerade_str.drawio.png)
+
+```
+-----------------CLIENT-----------------               ------PROXY------             -----SERVER----
+| echo client <-- TCP --> masque client | <-- QUIC --> | masque server | <-- TCP --> | echo server |
+----------------------------------------               -----------------             ---------------
+```
+<!-- ![](/assets/masquerade_str.drawio.png) -->
