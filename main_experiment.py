@@ -6,7 +6,10 @@ import sys
 import subprocess
 import utils
 
-SERVER_PORT = 12345
+ECHO_SERVER_PORT = 12345
+MASQUE_SERVER_PORT = 4433
+MASQUE_CLIENT_PORT = 8989
+LOG_LEVEL = 'info'
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 all_threads = []
@@ -39,9 +42,9 @@ def handle_client(conn, addr):
 
 # 启动UDP echo server
 # @start
-def run_server():
+def run_echo_server():
     # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', SERVER_PORT))
+    sock.bind(('', ECHO_SERVER_PORT))
     sock.listen(5)
     print('Ready to serve...')
 
@@ -54,9 +57,9 @@ def run_server():
 
 # 启动TCP client，向masquerade client (8989端口)发起http代理的连接
 # @start
-def tcp_client(server_ip, client_ip):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((client_ip, 8989))
+def test_echo_client(server_ip):
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('', MASQUE_CLIENT_PORT))
     def send(data):
         sock.send(data.encode() + b'\r\n')
         print('TCP client sent: ', data)
@@ -76,34 +79,36 @@ def main():
     role = sys.argv[1]
 
     if (role == 'server'):
-        run_server()
+        run_echo_server()
 
     elif (role == 'proxy'):
-        utils.kill_process_on_port(8989)
+        utils.kill_process_on_port(MASQUE_SERVER_PORT)
 
-        # server_ip = sys.argv[2]
-        # proxy_ip = sys.argv[3]
+        proxy_ip = sys.argv[2]
 
         # 启动masquerade server
         # 结尾带&的命令会在后台运行
         utils.exec(f'''
         cd ~/masque-linux
-        export RUST_LOG=info
-        ./server {server_ip}:4433 &
+        export RUST_LOG={LOG_LEVEL}
+        ./server {proxy_ip}:{MASQUE_SERVER_PORT} &
         ''')
 
     elif (role == 'client'):
-        proxy_ip = sys.argv[2]
-        client_ip = sys.argv[3]
+        utils.kill_process_on_port(MASQUE_CLIENT_PORT)
+
+        server_ip = sys.arv[2]
+        proxy_ip = sys.argv[3]
+        client_ip = sys.argv[4]
 
         # 启动masquerade client
         utils.exec(f'''
         cd ~/masque-linux
-        export RUST_LOG=info
-        ./client {proxy_ip}:4433 {client_ip}:8989 http &
+        export RUST_LOG={LOG_LEVEL}
+        ./client {proxy_ip}:{MASQUE_SERVER_PORT} {client_ip}:{MASQUE_CLIENT_PORT} http &
         ''')
 
-        tcp_client(proxy_ip, client_ip)
+        test_echo_client(server_ip)
     else:
         raise ValueError('Unrecognized role')
 
