@@ -25,8 +25,17 @@ import socket
 import subprocess
 import aioquic
 
+def log(*args):
+    BLUE = '\033[34m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
+    print(BLUE + BOLD, end='')
+    print(*args, end='')
+    print(END, end='\n')
+    time.sleep(0.01)
+
 def exec(command):
-    print('\n\n\nexecuting:', command)
+    log('\n\n\nexecuting:', command)
     os.system(command)
     time.sleep(1/10)
 
@@ -35,7 +44,7 @@ def spawn(func):
     thread.start()
 
 def start(func):
-    print('\n\n\nstarting:', func.__name__)
+    log('\n\n\nstarting:', func.__name__)
     thread = threading.Thread(target=func)
     thread.start()
     time.sleep(1/10)
@@ -52,20 +61,15 @@ def kill_process_on_port(port, wait=0.1):
                 pid = int(pid)
                 # 终止进程
                 subprocess.call(['kill', '-9', str(pid)])
-                print(f"Terminated process with PID {pid}")
+                log(f"Terminated process with PID {pid}")
     except subprocess.CalledProcessError:
-        print(f"No process found listening on port {port}")
+        log(f"No process found listening on port {port}")
     finally:
         time.sleep(wait)
 
 
 
 
-
-from aioquic.quic.connection import QuicConnection
-from aioquic.quic.configuration import QuicConfiguration
-from aioquic.h3.connection import H3Connection
-import ssl
 
 
 # 1. 启动masquerade proxy server
@@ -85,10 +89,10 @@ def udp_echo_server():
     # nc -u localhost 12345
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('localhost', 12345))
-    print('UDP echo server started')
+    log('UDP echo server started')
     while True:
         data, addr = sock.recvfrom(1024)
-        print('UDP echo server echoing: ', data)
+        log('UDP echo server echoing: ', data)
         sock.sendto(data, addr)
     sock.close()
 
@@ -100,57 +104,72 @@ def udp_echo_server():
 # 但是它们只是状态机，
 # 我们需要自己在UdpSocket, QuicConnection, H3Connection之间读写数据...
 
-@start
-def aioquic_masque_client():
 
-    proxy = ('localhost', 4433)
-    target = ('localhost', 12345)
+from aioquic.quic.connection import QuicConnection
+from aioquic.quic.configuration import QuicConfiguration
+from aioquic.h3.connection import H3Connection
+from aioquic.quic.events import QuicEvent
 
-    quic_config = QuicConfiguration(
-        is_client=True,
-        verify_mode=ssl.CERT_NONE,
-        alpn_protocols=["h3-29"],
-    )
-    quic_conn = QuicConnection(
-        configuration=quic_config,
-    )
-    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+from aioquic.asyncio.client import connect
+from aioquic.asyncio.protocol import QuicConnectionProtocol
 
-    # 为了支持不同的并发模型，
-    # quic_conn h3_conn都只是状态机，
-    # 我们需要自己实现计时、并发、读写udp socket
+import asyncio
+import ssl
 
-    # send()把quic_conn的数据写入socket，每次我们预期要发送数据时，都需要调用
-    def send():
-        for data, _addr in quic_conn.datagrams_to_send(now=time.time()):
-            print(f'\nsending {len(data)} bytes to {_addr}')
-            udp_sock.sendto(data, proxy)
-        # next_send_time = quic_conn.get_timer()
-        # print('next_send_time:', next_send_time)
-        # print('now:', time.time())
-        # if next_send_time is not None:
-        #     @spawn
-        #     def _():
-        #         time.sleep(next_send_time - time.time())
-        #         quic_conn.handle_timer(now=time.time())
-        #         send()
+class MasqueClient(QuicConnectionProtocol):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.h3 = H3Connection(self._quic)
 
-    # 更好的办法是用timer
-    @spawn
-    def auto_send():
-        while True:
-            time.sleep(1)
-            send()
-    # 创建自动运行的线程，把socket的数据读入quic_conn
-    @spawn
-    def auto_recv():
-        while True:
-            data, addr = udp_sock.recvfrom(65535)
-            print(f'\nreceived {len(data)} bytes from {addr}')
-            quic_conn.receive_datagram(data, proxy[0], now=time.time())
+    def quic_event_received(self, event: QuicEvent):
+        # 由于我们在手动管理self.h3状态机，必须保证它能收到所有的QuicEvent
+        self.h3.handle_event(event)
+        # 打印所有event
+        sort = event.__class__.__name__
+        if sort == 'StreamDataReceived':
+            if event.stream_id % 4 == 3:
+                log('drop GREASE noise on stream', event.stream_id)
+                return
+        log(event)
     
-    quic_conn.connect(*proxy)
-    send()
+    async def test(self):
+        log('sending connect-udp request')
+        stream_id = self._quic.get_next_available_stream_id()
+        self.h3.send_headers(
+            stream_id=stream_id,
+            headers=[
+                (b":method", b"CONNECT"), # 和一般的GET POST等不同，masque代理的特殊标记
+                (b":protocol", b"connect-udp"), # 另一个特殊标记，表示要用udp不是tcp
+                (b":path", b"/well-known/masque/localhost/12345"), # 转发的目的地，实际上之后最后两个斜杠会被读取
+
+                (b":authority", b"localhost"), # 代理服务器本身的地址，实际上并不会被masquerade检查
+                (b":scheme", b"https"), # scheme允许在同一个连接中混用http和https，实际上也不会被masquerade检查
+            ],
+        )
+        self.transmit()
+        # 接下来要等待 200 OK，但是这里直接用sleep代替
+        await asyncio.sleep(2)
+
+        log('sending data to udp echo server')
+        flow_id = stream_id // 4
+        data = b'hello world'
+        self.h3.send_datagram(flow_id, b'\x00' + data)
+        self.transmit()
+
+async def main():
+    async with connect(
+        'localhost', 4433, 
+        create_protocol=MasqueClient,
+        configuration=QuicConfiguration(
+            is_client=True,
+            verify_mode=ssl.CERT_NONE,
+            alpn_protocols=["h3-29"],
+        ),
+    ) as client:
+        await client.test()
+        await asyncio.sleep(9999)
+
+asyncio.run(main())
 
 
 
@@ -162,10 +181,9 @@ def aioquic_masque_client():
 
 
 
-
-
-
-time.sleep(999999999)
+loop = asyncio.get_event_loop()
+server = loop.create_datagram_endpoint(lambda: protocol, local_addr=(host, port))
+transport, protocol = loop.run_until_complete(server)
 
 
 
