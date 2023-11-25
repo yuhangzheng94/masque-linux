@@ -1,17 +1,27 @@
 
 # try to interact with the masquerade proxy server
 
-
 # The following script can download this script,
-#   the required dependencies, and certificates,
+#   the required dependencies, and certificates.
+
 '''
 sudo apt update
 sudo apt install -y python3-pip libssl-dev
+sudo apt install -y cmake cargo
+
 pip install aioquic
-clear
+
+code --install-extension ms-python.python
+code --install-extension rust-lang.rust-analyzer
+code --install-extension github.copilot
 
 cd ~
-sudo rm -rf ~/masque-linux
+sudo git clone https://github.com/jromwu/masquerade/
+cd masquerade
+sudo chmod a+rwx -R .
+cargo run --bin server
+
+cd ~
 sudo git clone https://github.com/dx2102/masque-linux
 cd masque-linux
 sudo chmod a+rwx -R .
@@ -72,12 +82,11 @@ def kill_process_on_port(port, wait=0.1):
 
 
 
-# 1. 启动masquerade proxy server
 kill_process_on_port(4433)
 exec('''
-cd ~/masque-linux
-export RUST_LOG=debug
-./server localhost:4433 &
+cd ~/masquerade
+export RUST_LOG=info
+cargo run --bin server localhost:4433 &
 ''')
 
 
@@ -134,7 +143,8 @@ class MasqueClient(QuicConnectionProtocol):
     
     async def test(self):
         log('sending connect-udp request')
-        stream_id = self._quic.get_next_available_stream_id()
+        #stream_id = self._quic.get_next_available_stream_id()
+        stream_id = 4 * 3
         self.h3.send_headers(
             stream_id=stream_id,
             headers=[
@@ -162,8 +172,14 @@ async def main():
         create_protocol=MasqueClient,
         configuration=QuicConfiguration(
             is_client=True,
-            verify_mode=ssl.CERT_NONE,
-            alpn_protocols=["h3-29"],
+            verify_mode=ssl.CERT_NONE, # 不验证证书，所以可能会受到中间人攻击，但是后续的数据还是会加密的
+            alpn_protocols=["h3-29"], # 使用h3-29草案的quic
+            max_datagram_frame_size=1200, # 默认为None，只有设了值才会允许h3 datagram扩展
+
+            # error!("Connection {} stream {} send failed {:?}", client.conn.trace_id(), to_send.stream_id, e);
+            # eprintln!("dgram_enabled_by_peer: {:?}", http3_conn.dgram_enabled_by_peer(&mut client.conn));
+            # 在masquerade中插入这一行，可以打印出masquerade认为我们是否支持h3 datagram
+                            
         ),
     ) as client:
         await client.test()
