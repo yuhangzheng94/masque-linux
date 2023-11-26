@@ -105,7 +105,7 @@ def main():
     elif (role == 'client'):
         utils.kill_process_on_port(MASQUE_CLIENT_PORT)
 
-        server_ip = sys.arv[2]
+        server_ip = sys.argv[2]
         proxy_ip = sys.argv[3]
         client_ip = sys.argv[4]
 
