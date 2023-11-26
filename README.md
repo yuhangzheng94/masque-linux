@@ -25,19 +25,19 @@ python tcp_echo_server.py
 
 Run masquerade server:
 ```bash
-chmod +x src/masque-server.sh
-./src/masque-server.sh
+chmod +x src/masque_server.sh
+./src/masque_server.sh
 ```
 3. client
 
 First run masquerade client:
 ```bash
-chmod +x src/masque-client.sh
-./src/masque-client.sh
+chmod +x src/masque_client.sh
+./src/masque_client.sh
 ```
 In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client:
 ```bash
-python tcp_echo_client.py "$SERVER_IP_ADDR"
+python tcp_echo_client.py "$SERVER_IP_ADDR" "$(hostname -i)"
 ```
 
 Application structure of the current deployment:
