@@ -16,17 +16,28 @@ python test.py
 To run it on separate nodes:
 
 1. server
+
+Run echo server:
 ```bash
-python main_experiment.py server
+python tcp_echo_server.py
 ```
 2. proxy
+
+Run masquerade server:
 ```bash
-chmod +x src/proxy.sh
-./src/proxy.sh
+chmod +x src/masque-server.sh
+./src/masque-server.sh
 ```
 3. client
+
+First run masquerade client:
 ```bash
-python main_experiment.py client [SERVER_IP_ADDR] [PROXY_IP_ADDR] "$(hostname -i)"
+chmod +x src/masque-client.sh
+./src/masque-client.sh
+```
+In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client:
+```bash
+python tcp_echo_client.py "$SERVER_IP_ADDR"
 ```
 
 Application structure of the current deployment:
