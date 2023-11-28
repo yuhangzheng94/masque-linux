@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 import csv
+import math
 
 # Lists to store the index and time collapse values
 index_values = []
 time_collapse_values = []
 
 # Read the CSV file and extract the data
-with open('test/test3.txt', 'r') as file:
+with open('test/test4.txt', 'r') as file:
     csv_reader = csv.reader(file)
     for row in csv_reader:
         index_values.append(int(row[0]))

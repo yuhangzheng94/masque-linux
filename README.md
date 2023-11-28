@@ -33,7 +33,7 @@ chmod +x src/masque_server.sh
 First run masquerade client:
 ```bash
 chmod +x src/masque_client.sh
-./src/masque_client.sh
+./src/masque_client.sh "$SERVER_IP_ADDR"
 ```
 In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client:
 ```bash
