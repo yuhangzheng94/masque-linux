@@ -5,26 +5,21 @@
 #   the required dependencies, and certificates.
 
 '''
-sudo apt update
-sudo apt install -y python3-pip libssl-dev
-sudo apt install -y cmake cargo
-
-pip install aioquic
-
-code --install-extension ms-python.python
-code --install-extension rust-lang.rust-analyzer
-code --install-extension github.copilot
-
-cd ~
-sudo git clone https://github.com/jromwu/masquerade/
-cd masquerade
-sudo chmod a+rwx -R .
-cargo run --bin server
-
 cd ~
 sudo git clone https://github.com/dx2102/masque-linux
 cd masque-linux
 sudo chmod a+rwx -R .
+
+sudo apt update
+sudo apt install -y python3-pip libssl-dev
+sudo apt install -y cmake cargo
+
+pip install aioquic ipykernel
+
+code --install-extension ms-python.python
+code --install-extension ms-toolsai.jupyter
+code --install-extension github.copilot
+
 '''
 
 
@@ -35,14 +30,16 @@ import socket
 import subprocess
 import aioquic
 
+silent = False
 def log(*args):
     BLUE = '\033[34m'
     BOLD = '\033[1m'
     END = '\033[0m'
-    print(BLUE + BOLD, end='')
-    print(*args, end='')
-    print(END, end='\n')
-    time.sleep(0.01)
+    if not silent:
+        print(BLUE + BOLD, end='')
+        print(*args, end='')
+        print(END, end='\n')
+        time.sleep(0.01)
 
 def exec(command):
     log('\n\n\nexecuting:', command)
@@ -84,9 +81,9 @@ def kill_process_on_port(port, wait=0.1):
 
 kill_process_on_port(4433)
 exec('''
-cd ~/masquerade
+cd ~/masque-linux
 export RUST_LOG=info
-cargo run --bin server localhost:4433 &
+,.server localhost:4433 &
 ''')
 
 
@@ -194,12 +191,6 @@ asyncio.run(main())
 
 
 
-
-
-
-loop = asyncio.get_event_loop()
-server = loop.create_datagram_endpoint(lambda: protocol, local_addr=(host, port))
-transport, protocol = loop.run_until_complete(server)
 
 
 
