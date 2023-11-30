@@ -42,24 +42,15 @@ def tcp_echo_server():
         @start
         def handler():
             while True:
-                buffer = []
                 try:
                     data = conn.recv(1024)
                 except ConnectionResetError:
                     break
                 if not data:
                     break
-                for char in data:
-                    if char == b'\n':
-                        line = b''.join(buffer)
-                        log('echoing tcp to', addr, 'data:', line)
-                        conn.sendall(line + b'\n')
-                        buffer = []
-                    else:
-                        buffer.append(char)
+                log('echoing to', addr, 'data:', data)
+                conn.sendall(data)
             print('tcp connection closed by', addr)
-            if buffer != []:
-                print('warning, buffer is not empty:', buffer)
             conn.close()
 
 @start
