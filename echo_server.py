@@ -33,7 +33,7 @@ def log(*args, **kwargs):
 @start
 def tcp_echo_server():
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    listener.bind(('localhost', 12345))
+    listener.bind(('0.0.0.0', 12345))
     listener.listen()
     print('tcp echo server started')
     while True:
@@ -61,7 +61,7 @@ def tcp_echo_server():
 @start
 def udp_echo_server():
     listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    listener.bind(('localhost', 12345))
+    listener.bind(('0.0.0.0', 12345))
     print('udp echo server started')
     old_users = set()
     while True:
