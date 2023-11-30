@@ -16,7 +16,7 @@ import sys
 
 # start装饰器会在新线程，直接运行被装饰的函数
 from utils import start, local_ip, kill_process_on_port
-# kill_process_on_port(12345)
+kill_process_on_port(12345)
 print()
 print('Running echo server on ' + local_ip + ':12345')
 
@@ -49,12 +49,14 @@ def tcp_echo_server():
                     break
                 if not data:
                     break
-                buffer.append(data)
-                if b'\n' in data:
-                    data = b''.join(buffer)
-                    log('echoing tcp to', addr, 'data:', data)
-                    conn.sendall(data)
-                    buffer = []
+                for char in data:
+                    if char == b'\n':
+                        line = b''.join(buffer)
+                        log('echoing tcp to', addr, 'data:', line)
+                        conn.sendall(line + b'\n')
+                        buffer = []
+                    else:
+                        buffer.append(char)
             print('tcp connection closed by', addr)
             conn.close()
 
