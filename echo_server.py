@@ -58,6 +58,8 @@ def tcp_echo_server():
                     else:
                         buffer.append(char)
             print('tcp connection closed by', addr)
+            if buffer != []:
+                print('warning, buffer is not empty:', buffer)
             conn.close()
 
 @start
