@@ -16,10 +16,7 @@ import sys
 
 # start装饰器会在新线程，直接运行被装饰的函数
 from utils import start, local_ip, kill_process_on_port
-kill_process_on_port(12345)
-kill_process_on_port(23456)
 print()
-print('Running echo server on ' + local_ip + ':12345')
 
 # 获取quiet
 parser = argparse.ArgumentParser()
@@ -34,9 +31,11 @@ def log(*args, **kwargs):
 @start
 def tcp_echo_server():
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    listener.bind(('0.0.0.0', 23456))
+    listener.bind(('0.0.0.0', 0))
     listener.listen()
-    print('tcp echo server started')
+    print('tcp_echo_addr =', 
+        (local_ip, listener.getsockname()[1])
+    )
     while True:
         conn, addr = listener.accept()
         print('tcp connected by', addr)
@@ -51,9 +50,9 @@ def tcp_echo_server():
                 if not data:
                     break
                 for char in data:
-                    if char != ord('\n'):
+                    char = bytes([char])
+                    if char != b'\n':
                         buffer.append(char)
-                        print(buffer)
                     else:
                         line = b''.join(buffer)
                         log('echoing tcp to', addr, 'data:', line)
@@ -65,8 +64,10 @@ def tcp_echo_server():
 @start
 def udp_echo_server():
     listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    listener.bind(('0.0.0.0', 12345))
-    print('udp echo server started')
+    listener.bind(('0.0.0.0', 0))
+    print('udp_echo_addr =', 
+        (local_ip, listener.getsockname()[1])
+    )
     old_users = set()
     while True:
         try:
