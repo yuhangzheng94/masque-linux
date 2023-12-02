@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import csv, math
 
 # List of CSV file names
-csv_files = ['test/tcp_tunneling_new.txt', 'test/masquerade_tunneling.txt',]  # Add your file names here
+csv_files = ['test/mlfc.txt', 'test/mlfr.txt','test/tcp_large_file_cubic.txt','test/tcp_large_file_reno.txt']  # Add your file names here
 
 # List of colors for each line
-line_colors = ['red', 'blue', 'green']  # Add your desired colors here
+line_colors = ['red', 'blue', 'green', 'purple', 'orange']  # Add your desired colors here
 
 # # Variables to store the minimum and maximum x-axis values
 # x_min = float('inf')
@@ -17,12 +17,17 @@ for file, color in zip(csv_files, line_colors):
     start_time = []
     difference = []
 
+    # count = 0
+
     # Read the CSV file and extract the data
     with open(file, 'r') as csv_file:
         csv_reader = csv.reader(csv_file)
         for row in csv_reader:
-            start_time.append(float(row[0]))
-            difference.append(math.log(float(row[3])))
+            # count += 1
+            # if (count <= 2):
+            #     continue
+            start_time.append(int(row[0]))
+            difference.append((float(row[3])))
 
     # # Update the minimum and maximum x-axis values
     # x_min = min(x_min, min(start_time))
@@ -31,14 +36,14 @@ for file, color in zip(csv_files, line_colors):
     # Plot the line graph for the current file
     plt.plot(start_time, difference, color=color, label=file)
 
-    # Identify outliers
-    outliers = []  # Add your logic to identify outliers here
-    for i in range(100):
-        if (difference[i] in sorted(difference)[95:]):
-            outliers.append(i)
+    # # Identify outliers
+    # outliers = []  # Add your logic to identify outliers here
+    # for i in range(20):
+    #     if (difference[i] in sorted(difference)[15:]):
+    #         outliers.append(i)
         
-    # Plot outliers with a different marker
-    plt.scatter([start_time[i] for i in outliers], [difference[i] for i in outliers], color='black', marker='o')
+    # # Plot outliers with a different marker
+    # plt.scatter([start_time[i] for i in outliers], [difference[i] for i in outliers], color='black', marker='o')
 
 
 # Set the labels and title
