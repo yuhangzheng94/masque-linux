@@ -2,11 +2,11 @@ import socket
 
 # Proxy address and port
 proxy_host = '128.110.217.132'
-proxy_port = 12343
+proxy_port = 4433
 
 # Server address and port
 server_host = '128.110.217.156'
-server_port = 54321
+server_port = 12345
 
 # Create a socket object
 proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
