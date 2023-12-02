@@ -54,6 +54,7 @@ def test_echo_client(server_ip, client_ip):
         data = sock.recv(1024)
         # time.sleep(0.00001)
         while (not data.decode().strip().endswith('DONE')):
+        # while not ('DONE' in data.decode()):
             print('TCP client received: ', data)
             data = sock.recv(1024)
         print('TCP client received: ', data)
