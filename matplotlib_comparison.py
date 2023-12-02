@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv, math
 
 # List of CSV file names
-csv_files = ['test/mlfc.txt', 'test/mlfr.txt','test/tcp_large_file_cubic.txt','test/tcp_large_file_reno.txt']  # Add your file names here
+csv_files = ['test/masquerade_large_file_cubic_new.txt', 'test/masquerade_large_file_reno_new.txt','test/tcp_large_file_cubic.txt','test/tcp_large_file_reno.txt']  # Add your file names here
 
 # List of colors for each line
 line_colors = ['red', 'blue', 'green', 'purple', 'orange']  # Add your desired colors here
