@@ -15,29 +15,37 @@ python test.py
 
 To run it on separate nodes:
 
-1. server
+1. Server
 
-Run echo server:
+Run echo server or file server:
 ```bash
 python tcp_echo_server.py
 ```
-2. proxy
+or
+```bash
+python tcp_file_server.py
+```
+2. Proxy
 
-Run masquerade server:
+Run MASQUE server:
 ```bash
 chmod +x src/masque_server.sh
 ./src/masque_server.sh
 ```
 3. client
 
-First run masquerade client:
+First run MASQUE client:
 ```bash
 chmod +x src/masque_client.sh
 ./src/masque_client.sh "$PROXY_IP_ADDR"
 ```
-In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client:
+In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client or file client:
 ```bash
 python tcp_echo_client.py "$SERVER_IP_ADDR" "$(hostname -i)"
+```
+or
+```bash
+python tcp_file_server.py "$SERVER_IP_ADDR" "$(hostname -i)"
 ```
 
 To test bit overhead of inner QUIC
