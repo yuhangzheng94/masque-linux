@@ -39,7 +39,9 @@ In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo clien
 ```bash
 python tcp_echo_client.py "$SERVER_IP_ADDR" "$(hostname -i)"
 ```
-To Run Simple QUIC File Server and Client, run quic_file_server.py and quic_file_client.py: 
+
+To test bit overhead of inner QUIC
+Run QUIC file server and client: 
 ```bash
 python quic_file_server.py
 python quic_file_client.py
@@ -48,8 +50,8 @@ python quic_file_client.py
 Application structure of the current deployment:
 
 ```
------------------CLIENT-----------------               ------PROXY------             -----SERVER----
-| echo client <-- TCP --> masque client | <-- QUIC --> | masque server | <-- TCP --> | echo server |
-----------------------------------------               -----------------             ---------------
+---------------CLIENT---------------              ------PROXY------             --------SERVER--------
+| Client <-- TCP --> MASQUE Client | <-- QUIC --> | MASQUE Server | <-- TCP --> | Application Server |
+------------------------------------              -----------------             ----------------------
 ```
 <!-- ![](/assets/masquerade_str.drawio.png) -->
