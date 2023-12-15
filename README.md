@@ -15,36 +15,51 @@ python test.py
 
 To run it on separate nodes:
 
-1. server
+1. Server
 
-Run echo server:
+Run echo server or file server:
 ```bash
 python tcp_echo_server.py
 ```
-2. proxy
+or
+```bash
+python tcp_file_server.py
+```
+2. Proxy
 
-Run masquerade server:
+Run MASQUE server:
 ```bash
 chmod +x src/masque_server.sh
 ./src/masque_server.sh
 ```
 3. client
 
-First run masquerade client:
+First run MASQUE client:
 ```bash
 chmod +x src/masque_client.sh
 ./src/masque_client.sh "$PROXY_IP_ADDR"
 ```
-In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client:
+In a new terminal, change the `"$SERVER_IP_ADDR"` accordingly and run echo client or file client:
 ```bash
 python tcp_echo_client.py "$SERVER_IP_ADDR" "$(hostname -i)"
+```
+or
+```bash
+python tcp_file_server.py "$SERVER_IP_ADDR" "$(hostname -i)"
+```
+
+To test bit overhead of inner QUIC
+Run QUIC file server and client: 
+```bash
+python quic_file_server.py
+python quic_file_client.py
 ```
 
 Application structure of the current deployment:
 
 ```
------------------CLIENT-----------------               ------PROXY------             -----SERVER----
-| echo client <-- TCP --> masque client | <-- QUIC --> | masque server | <-- TCP --> | echo server |
-----------------------------------------               -----------------             ---------------
+---------------CLIENT---------------              ------PROXY------             --------SERVER--------
+| Client <-- TCP --> MASQUE Client | <-- QUIC --> | MASQUE Server | <-- TCP --> | Application Server |
+------------------------------------              -----------------             ----------------------
 ```
 <!-- ![](/assets/masquerade_str.drawio.png) -->
