@@ -10,11 +10,14 @@ def calculate_average_rtts(filename):
         return average_rtt
 
 # List of input files for TCP and masquerade
-tcp_files = ['test/tcp_info_0.txt', 'test/tcp_info_0.1.txt', 'test/tcp_info_1.txt', 'test/tcp_info_2.txt']
-masquerade_files = ['test/masque_info_0.txt', 'test/masque_info_0.1.txt', 'test/masque_info_1.txt', 'test/masque_info_2.txt']
+tcp_files = ['test/tcp_1350_1_25.txt','test/tcp_1350_5_25.txt','test/tcp_1350_10_25.txt','test/tcp_1350_15_25.txt','test/tcp_1350_25_25.txt','test/tcp_1350_50_25.txt']
+# tcp_files = ['test/tcp_info_0.txt', 'test/tcp_info_0.1.txt', 'test/tcp_info_1.txt', 'test/tcp_info_2.txt']
+# masquerade_files = ['test/masque_info_0.txt', 'test/masque_info_0.1.txt', 'test/masque_info_1.txt', 'test/masque_info_2.txt']
+masquerade_files = ['test/masque_info_1350_1_25.txt', 'test/masque_info_1350_5_25.txt', 'test/masque_info_1350_10_25.txt', 'test/masque_info_1350_15_25.txt', 'test/masque_info_1350_25_25.txt', 'test/masque_info_1350_50_25.txt', ]
 
 # List of delay values
-delays = ['0%', '0.1%', '1%', '2%']
+# delays = ['0%', '0.1%', '1%', '2%']
+delays = ['1ms', '5ms', '10ms', '15ms', '25ms', '50ms']
 
 # Lists to store average round trip times for TCP and masquerade
 average_rtts_tcp = []
@@ -38,7 +41,7 @@ r1 = np.arange(len(average_rtts_tcp))
 r2 = [x + bar_width for x in r1]
 
 # Generate the chart
-plt.bar(r1, average_rtts_tcp, color='b', width=bar_width, edgecolor='white', label='TCP')
+# plt.bar(r1, average_rtts_tcp, color='b', width=bar_width, edgecolor='white', label='TCP')
 plt.bar(r2, average_rtts_masquerade, color='g', width=bar_width, edgecolor='white', label='Masquerade')
 
 # Add x-axis ticks and labels

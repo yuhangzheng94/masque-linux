@@ -2,8 +2,13 @@ import matplotlib.pyplot as plt
 import csv, math
 
 # List of CSV file names
-# csv_files = ['test/masque_info_1350_50_25.txt', 'test/masque_info_1350_25_25.txt', 'test/masque_info_1350_15_25.txt', 'test/masque_info_1350_10_25.txt', 'test/masque_info_1350_5_25.txt', 'test/masque_info_1350_1_25.txt', 'test/tcp_1350_50_25.txt','test/tcp_1350_25_25.txt','test/tcp_1350_15_25.txt','test/tcp_1350_10_25.txt','test/tcp_1350_5_25.txt','test/tcp_1350_1_25.txt']
-csv_files = ['test/masque_info_0.txt','test/masque_info_0.1.txt','test/masque_info_1.txt','test/masque_info_2.txt','test/tcp_info_0.txt','test/tcp_info_0.1.txt','test/tcp_info_1.txt', 'test/tcp_info_2.txt']  # Add your file names here
+csv_files = ['test/masquerade_large_file_cubic_new.txt',
+# 'test/masquerade_large_file_cubic.txt',
+'test/masquerade_large_file_reno_new.txt']
+# ,'test/masquerade_large_file_reno.txt']
+# csv_files = ['test/masque_info_1350_50_25.txt', 'test/masque_info_1350_25_25.txt', 'test/masque_info_1350_15_25.txt', 'test/masque_info_1350_10_25.txt', 'test/masque_info_1350_5_25.txt', 'test/masque_info_1350_1_25.txt', ]
+# 'test/tcp_1350_50_25.txt','test/tcp_1350_25_25.txt','test/tcp_1350_15_25.txt','test/tcp_1350_10_25.txt','test/tcp_1350_5_25.txt','test/tcp_1350_1_25.txt']
+# csv_files = ['test/masque_info_0.txt','test/masque_info_0.1.txt','test/masque_info_1.txt','test/masque_info_2.txt','test/tcp_info_0.txt','test/tcp_info_0.1.txt','test/tcp_info_1.txt', 'test/tcp_info_2.txt']  # Add your file names here
 
 # List of colors for each line
 line_colors = ['red', 'blue', 'green', 'purple', 'orange', 'brown', 'yellow', 'pink','black','purple','orange', 'brown']  # Add your desired colors here
@@ -28,7 +33,7 @@ for file, color in zip(csv_files, line_colors):
             # if (count <= 2):
             #     continue
             start_time.append(int(row[0]))
-            difference.append(math.log(float(row[3])))
+            difference.append((float(row[3])))
 
     # # Update the minimum and maximum x-axis values
     # x_min = min(x_min, min(start_time))
