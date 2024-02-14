@@ -1,5 +1,6 @@
 ### MASQUERADE
 
+This project aim to reproduce the paper Evaluation of QUIC-based MASQUE Proxying https://dl.acm.org/doi/pdf/10.1145/3488660.3493806
 This repository provides a compiled version of @jromwu's [masquarede](https://github.com/jromwu/masquerade) and a Python module for running server/proxy/client on Linux.
 
 First clone the repository:
